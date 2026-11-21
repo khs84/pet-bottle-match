@@ -89,6 +89,17 @@
   .summary { display: grid; gap: 1.2vh; font-size: clamp(20px, 2.4vw, 36px); background: #fff; border-radius: 24px; padding: 2vh 3vw; box-shadow: var(--shadow); }
   .confetti { position: fixed; top: -40px; font-size: 34px; z-index: 11; pointer-events: none; animation: fall linear forwards; }
   @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+  .bub {
+    position: fixed; z-index: 5; pointer-events: none; border-radius: 50%;
+    border: 3px solid #3b8fd0; background: radial-gradient(circle at 30% 30%, #fff 0 25%, rgba(159,211,245,.5) 26%);
+    opacity: 0; animation: rise ease-out forwards;
+  }
+  @keyframes rise {
+    0% { opacity: 0; transform: translate(0, 0) scale(.5); }
+    15% { opacity: 1; }
+    50% { transform: translate(10px, -22vh) scale(1); }
+    100% { opacity: 0; transform: translate(-8px, -45vh) scale(1.15); }
+  }
 </style>
 </head>
 <body>
@@ -188,6 +199,59 @@ function tone(freqs, dur = .16, type = "sine") {
 const chime = () => tone([784, 988, 1319], .13);
 const buzz  = () => tone([220, 196], .14, "triangle");
 
+/* 뽀글뽀글 거품 소리: 짧게 음이 올라가는 '퐁' 소리 여러 개 + 물 흐르는 잡음 */
+function bubbles(seconds = 1.8, loud = 1) {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const now = ac.currentTime + 0.02;
+    const master = ac.createGain(); master.gain.value = 0.5 * loud; master.connect(ac.destination);
+
+    // 물 흐르는 소리 (걸러 낸 잡음)
+    const len = Math.floor(ac.sampleRate * seconds), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
+    let last = 0;
+    for (let i = 0; i < len; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+    const noise = ac.createBufferSource(); noise.buffer = buf;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 500; bp.Q.value = 0.8;
+    const ng = ac.createGain();
+    ng.gain.setValueAtTime(0.0001, now); ng.gain.exponentialRampToValueAtTime(0.35, now + 0.15);
+    ng.gain.exponentialRampToValueAtTime(0.0001, now + seconds);
+    noise.connect(bp).connect(ng).connect(master); noise.start(now); noise.stop(now + seconds);
+
+    // 거품 하나하나가 터지는 소리
+    let t = now;
+    while (t < now + seconds - 0.1) {
+      const f0 = 280 + Math.random() * 700, dur = 0.04 + Math.random() * 0.06;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f0 * (2 + Math.random() * 1.5), t + dur);
+      const peak = 0.12 + Math.random() * 0.22;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(peak, t + 0.006);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur * 1.4);
+      o.connect(g).connect(master); o.start(t); o.stop(t + dur * 1.5);
+      const progress = (t - now) / seconds;              // 처음엔 빽빽, 갈수록 드문드문
+      t += 0.025 + Math.random() * (0.05 + progress * 0.16);
+    }
+  } catch (e) {}
+}
+
+/* 화면 위로 떠오르는 거품 */
+function bubbleFx(card, count = 14) {
+  const r = card.getBoundingClientRect();
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement("div");
+    b.className = "bub";
+    const size = 12 + Math.random() * 26;
+    b.style.width = b.style.height = size + "px";
+    b.style.left = r.left + r.width * (0.1 + Math.random() * 0.8) + "px";
+    b.style.top = r.bottom - 20 + "px";
+    b.style.animationDuration = 1.2 + Math.random() * 1.2 + "s";
+    b.style.animationDelay = Math.random() * 0.8 + "s";
+    document.body.appendChild(b);
+    setTimeout(() => b.remove(), 3400);
+  }
+}
+
 /* ---------- 게임 ---------- */
 const $ = id => document.getElementById(id);
 let selLeft = null, selRight = null, matched = new Set();
@@ -230,7 +294,11 @@ function tapRight(c) {
   if (c.classList.contains("done")) return;
   document.querySelectorAll(".res.selected").forEach(x => x.classList.remove("selected"));
   c.classList.add("selected"); selRight = c;
-  if (selLeft) check(); else say("res_" + c.dataset.id);
+  if (selLeft) check();
+  else {
+    say("res_" + c.dataset.id);
+    if (c.dataset.id === "water") { bubbles(1.0, 0.6); bubbleFx(c, 7); }
+  }
 }
 
 function check() {
@@ -241,8 +309,13 @@ function check() {
     L.classList.add("done"); R.classList.add("done");
     matched.add(L.dataset.id);
     drawLines(); updateStars(); chime();
-    setTimeout(() => say("ok_" + L.dataset.id), 380);
-    if (matched.size === ITEMS.length) setTimeout(finish, 3600);
+    if (L.dataset.id === "water") {
+      setTimeout(() => { bubbles(2.2); bubbleFx(R, 18); }, 250);
+      setTimeout(() => say("ok_water"), 1500);
+    } else {
+      setTimeout(() => say("ok_" + L.dataset.id), 380);
+    }
+    if (matched.size === ITEMS.length) setTimeout(finish, L.dataset.id === "water" ? 5000 : 3600);
   } else {
     [L, R].forEach(x => { x.classList.remove("shake"); void x.offsetWidth; x.classList.add("shake"); });
     setTimeout(() => [L, R].forEach(x => x.classList.remove("shake")), 500);
