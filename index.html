@@ -204,7 +204,7 @@ function bubbles(seconds = 1.8, loud = 1) {
   try {
     ac = ac || new (window.AudioContext || window.webkitAudioContext)();
     const now = ac.currentTime + 0.02;
-    const master = ac.createGain(); master.gain.value = 0.5 * loud; master.connect(ac.destination);
+    const master = ac.createGain(); master.gain.value = 0.9 * loud; master.connect(ac.destination);
 
     // 물 흐르는 소리 (걸러 낸 잡음)
     const len = Math.floor(ac.sampleRate * seconds), buf = ac.createBuffer(1, len, ac.sampleRate), d = buf.getChannelData(0);
