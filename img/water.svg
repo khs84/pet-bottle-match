@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
+  <rect width="300" height="200" rx="18" fill="#f1f8ff"/>
+  <!-- 수조 -->
+  <rect x="34" y="62" width="232" height="122" rx="8" fill="#9fd3f5" opacity=".75"/>
+  <path d="M34 62 Q60 56 86 62 T138 62 T190 62 T242 62 T266 62" stroke="#3b8fd0" stroke-width="3" fill="none"/>
+  <path d="M30 30 V178 Q30 188 40 188 H260 Q270 188 270 178 V30" stroke="#1f3a5f" stroke-width="4" fill="none" stroke-linejoin="round"/>
+  <!-- 물속에 누운 페트병 (입구가 오른쪽 위) -->
+  <g transform="rotate(-12 150 140)">
+    <path d="M64 120 Q64 110 76 110 H172 Q196 110 208 124 H222 V146 H208 Q196 160 172 160 H76 Q64 160 64 150 Z"
+          fill="#e3f3ff" stroke="#5aa0d8" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M100 112 V158 M136 112 V158" stroke="#9cc9ee" stroke-width="3"/>
+    <path d="M78 122 H170" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity=".9"/>
+  </g>
+  <!-- 공기 방울 -->
+  <g fill="#ffffff" stroke="#3b8fd0" stroke-width="3">
+    <circle cx="232" cy="104" r="9"/>
+    <circle cx="222" cy="82" r="7"/>
+    <circle cx="240" cy="70" r="11"/>
+    <circle cx="226" cy="44" r="8"/>
+    <circle cx="246" cy="30" r="6"/>
+    <circle cx="210" cy="56" r="5"/>
+  </g>
+  <path d="M252 46 q8 -6 14 0 M200 36 q6 -6 12 0" stroke="#3b8fd0" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

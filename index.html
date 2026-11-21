@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>빈 페트병 짝 맞추기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eaf6ff;
+    --ink: #1f3a5f;
+    --card: #ffffff;
+    --accent: #2f80ed;
+    --accent-soft: #d6e8ff;
+    --ok: #27ae60;
+    --ok-soft: #dff7e8;
+    --bad: #eb5757;
+    --sel: #f2994a;
+    --shadow: 0 6px 0 rgba(31,58,95,.15);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Jua", "Malgun Gothic", sans-serif;
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+    overflow: hidden;
+  }
+  .app { height: 100%; display: flex; flex-direction: column; padding: 2vh 2.5vw; gap: 2vh; }
+
+  header { display: flex; align-items: center; gap: 1.2vw; }
+  h1 { margin: 0; font-size: clamp(22px, 3.6vw, 52px); font-weight: 400; flex: 1; line-height: 1.15; }
+  h1 small { display: block; font-size: .5em; opacity: .7; }
+  .stars { font-size: clamp(22px, 3vw, 44px); letter-spacing: .1em; }
+  .tool {
+    border: 0; border-radius: 18px; background: var(--card); color: var(--ink);
+    font: inherit; font-size: clamp(16px, 1.8vw, 26px);
+    padding: 1.2vh 1.4vw; box-shadow: var(--shadow); cursor: pointer; white-space: nowrap;
+  }
+  .tool:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(31,58,95,.15); }
+
+  .board { position: relative; flex: 1; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.7fr) minmax(0,1.35fr); min-height: 0; }
+  .col { display: flex; flex-direction: column; justify-content: space-around; gap: 2vh; z-index: 2; }
+  svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+
+  .card {
+    position: relative; background: var(--card); border: 6px solid transparent; border-radius: 26px;
+    box-shadow: var(--shadow); cursor: pointer; transition: transform .12s, border-color .12s, background .2s;
+  }
+  .card:active { transform: scale(.97); }
+  .card.selected { border-color: var(--sel); background: #fff4e8; transform: scale(1.03); }
+  .card.done { border-color: var(--ok); background: var(--ok-soft); cursor: default; }
+  .card.shake { animation: shake .45s; border-color: var(--bad); }
+  @keyframes shake { 20%,60% { transform: translateX(-12px); } 40%,80% { transform: translateX(12px); } }
+
+  .act { display: flex; align-items: center; gap: 1.2vw; padding: 2vh 1.5vw; flex: 1; max-height: 24vh; }
+  .act .emo { font-size: clamp(40px, 6vw, 96px); line-height: 1; }
+  .act .txt { font-size: clamp(24px, 3.4vw, 54px); word-break: keep-all; }
+
+  .res { display: flex; align-items: center; gap: 1.2vw; padding: 1vh; flex: 1; max-height: 24vh; }
+  .res img { height: 100%; max-height: 20vh; width: auto; max-width: 45%; aspect-ratio: 3/2; flex: none; object-fit: contain; border-radius: 18px; pointer-events: none; }
+  .res .txt { word-break: keep-all; font-size: clamp(18px, 2.3vw, 38px); line-height: 1.25; padding-right: .8vw; }
+
+  .dot {
+    position: absolute; top: 50%; width: 3.2vmin; height: 3.2vmin; min-width: 18px; min-height: 18px;
+    border-radius: 50%; background: var(--ink); transform: translateY(-50%);
+  }
+  .act .dot { right: -1.9vmin; }
+  .res .dot { left: -1.9vmin; }
+  .card.done .dot { background: var(--ok); }
+
+  .overlay {
+    position: fixed; inset: 0; background: rgba(234,246,255,.96); z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; text-align: center; padding: 4vw;
+  }
+  .overlay[hidden] { display: none; }
+  .overlay .big { font-size: clamp(30px, 5vw, 80px); line-height: 1.25; }
+  .overlay .sub { font-size: clamp(20px, 2.6vw, 40px); opacity: .85; line-height: 1.4; }
+  .bottle { font-size: clamp(80px, 14vw, 200px); line-height: 1; animation: bob 2.4s ease-in-out infinite; }
+  @keyframes bob { 50% { transform: translateY(-14px) rotate(-4deg); } }
+  .go {
+    border: 0; border-radius: 999px; background: var(--accent); color: #fff; font: inherit;
+    font-size: clamp(28px, 4vw, 64px); padding: 2.2vh 6vw; box-shadow: 0 8px 0 #1c5fb8; cursor: pointer;
+  }
+  .go:active { transform: translateY(6px); box-shadow: 0 2px 0 #1c5fb8; }
+  .summary { display: grid; gap: 1.2vh; font-size: clamp(20px, 2.4vw, 36px); background: #fff; border-radius: 24px; padding: 2vh 3vw; box-shadow: var(--shadow); }
+  .confetti { position: fixed; top: -40px; font-size: 34px; z-index: 11; pointer-events: none; animation: fall linear forwards; }
+  @keyframes fall { to { transform: translateY(110vh) rotate(540deg); } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1><small>나1. 생활 속 기체 · 우리 주변의 공기</small>빈 페트병 속에는 무엇이 있을까?</h1>
+    <div class="stars" id="stars" aria-label="맞힌 개수">☆☆☆</div>
+    <button class="tool" id="btnHear">🔊 다시 듣기</button>
+    <button class="tool" id="btnReset">↻ 처음부터</button>
+    <button class="tool" id="btnFull">⛶ 전체 화면</button>
+  </header>
+
+  <main class="board" id="board">
+    <div class="col" id="left"></div>
+    <div></div>
+    <div class="col" id="right"></div>
+    <svg class="lines" id="lines"></svg>
+  </main>
+</div>
+
+<div class="overlay" id="start">
+  <div class="bottle">🧴</div>
+  <div class="big">빈 페트병 짝 맞추기</div>
+  <div class="sub">왼쪽 카드를 누르고,<br>알맞은 사진을 눌러 연결해요.</div>
+  <button class="go" id="btnStart">▶ 시작하기</button>
+</div>
+
+<div class="overlay" id="finish" hidden>
+  <div class="big">🎉 참 잘했어요! 🎉</div>
+  <div class="summary" id="summary"></div>
+  <div class="sub">빈 페트병 속에는<br><b>눈에 보이지 않는 공기</b>가 들어 있어요.</div>
+  <button class="go" id="btnAgain">↻ 다시 하기</button>
+</div>
+
+<script>
+const ITEMS = [
+  { id: "step",  emo: "🦶", act: "발로 밟기",   res: "페트병이 찌그러져요.",     img: "img/step.svg"  },
+  { id: "see",   emo: "👀", act: "눈으로 보기", res: "아무것도 보이지 않아요.",   img: "img/see.svg"   },
+  { id: "water", emo: "💧", act: "물속에 넣기", res: "뽀글뽀글 거품이 나와요.",   img: "img/water.svg" },
+];
+
+/* ---------- 음성: 미리 만든 신경망 음성 MP3 우선, 실패 시 브라우저 음성 ---------- */
+const TEXT = {
+  intro: "빈 페트병을 탐색해 봐요. 왼쪽 카드를 누르고, 알맞은 사진을 눌러서 연결해 보세요.",
+  wrong: "다시 한번 생각해 볼까요?",
+  done: "참 잘했어요! 빈 페트병 속에는 눈에 보이지 않는 공기가 들어 있어요.",
+};
+ITEMS.forEach(it => {
+  TEXT["act_" + it.id] = it.act;
+  TEXT["res_" + it.id] = it.res;
+});
+Object.assign(TEXT, {
+  ok_step: "딩동댕! 발로 밟으면 페트병이 찌그러져요.",
+  ok_see: "딩동댕! 눈으로 보면 아무것도 보이지 않아요.",
+  ok_water: "딩동댕! 물속에 넣으면 뽀글뽀글 거품이 나와요.",
+});
+const clips = {};
+Object.keys(TEXT).forEach(k => { const a = new Audio("audio/" + k + ".mp3"); a.preload = "auto"; clips[k] = a; });
+let current = null, lastKey = "intro";
+
+function pickVoice() {
+  const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("ko"));
+  return vs.find(v => /Google/.test(v.name)) || vs.find(v => /Online|Natural/.test(v.name)) || vs[0] || null;
+}
+function speakFallback(key) {
+  if (!("speechSynthesis" in window)) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(TEXT[key]);
+  u.lang = "ko-KR"; u.rate = 0.9; const v = pickVoice(); if (v) u.voice = v;
+  speechSynthesis.speak(u);
+}
+function say(key) {
+  lastKey = key;
+  if (current) { current.pause(); current.currentTime = 0; }
+  if ("speechSynthesis" in window) speechSynthesis.cancel();
+  const a = clips[key];
+  current = a;
+  a.currentTime = 0;
+  const p = a.play();
+  if (p && p.catch) p.catch(() => speakFallback(key));
+}
+
+/* ---------- 효과음 (Web Audio) ---------- */
+let ac = null;
+function tone(freqs, dur = .16, type = "sine") {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f, i) => {
+      const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + i * dur;
+      o.type = type; o.frequency.value = f;
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.25, t + .02);
+      g.gain.exponentialRampToValueAtTime(.0001, t + dur * 1.6);
+      o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur * 1.7);
+    });
+  } catch (e) {}
+}
+const chime = () => tone([784, 988, 1319], .13);
+const buzz  = () => tone([220, 196], .14, "triangle");
+
+/* ---------- 게임 ---------- */
+const $ = id => document.getElementById(id);
+let selLeft = null, selRight = null, matched = new Set();
+
+function shuffle(a) {
+  const b = a.slice();
+  for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; }
+  return b;
+}
+
+function build() {
+  matched.clear(); selLeft = selRight = null;
+  $("left").innerHTML = ""; $("right").innerHTML = ""; $("lines").innerHTML = "";
+  ITEMS.forEach(it => {
+    const c = document.createElement("div");
+    c.className = "card act"; c.dataset.id = it.id;
+    c.innerHTML = `<span class="emo">${it.emo}</span><span class="txt">${it.act}</span><span class="dot"></span>`;
+    c.addEventListener("pointerup", () => tapLeft(c));
+    $("left").appendChild(c);
+  });
+  let order = shuffle(ITEMS);
+  while (order.every((it, i) => it.id === ITEMS[i].id)) order = shuffle(ITEMS);
+  order.forEach(it => {
+    const c = document.createElement("div");
+    c.className = "card res"; c.dataset.id = it.id;
+    c.innerHTML = `<span class="dot"></span><img src="${it.img}" alt="${it.res}"><span class="txt">${it.res}</span>`;
+    c.addEventListener("pointerup", () => tapRight(c));
+    $("right").appendChild(c);
+  });
+  updateStars();
+}
+
+function tapLeft(c) {
+  if (c.classList.contains("done")) return;
+  document.querySelectorAll(".act.selected").forEach(x => x.classList.remove("selected"));
+  c.classList.add("selected"); selLeft = c;
+  if (selRight) check(); else say("act_" + c.dataset.id);
+}
+function tapRight(c) {
+  if (c.classList.contains("done")) return;
+  document.querySelectorAll(".res.selected").forEach(x => x.classList.remove("selected"));
+  c.classList.add("selected"); selRight = c;
+  if (selLeft) check(); else say("res_" + c.dataset.id);
+}
+
+function check() {
+  const L = selLeft, R = selRight;
+  selLeft = selRight = null;
+  L.classList.remove("selected"); R.classList.remove("selected");
+  if (L.dataset.id === R.dataset.id) {
+    L.classList.add("done"); R.classList.add("done");
+    matched.add(L.dataset.id);
+    drawLines(); updateStars(); chime();
+    setTimeout(() => say("ok_" + L.dataset.id), 380);
+    if (matched.size === ITEMS.length) setTimeout(finish, 3600);
+  } else {
+    [L, R].forEach(x => { x.classList.remove("shake"); void x.offsetWidth; x.classList.add("shake"); });
+    setTimeout(() => [L, R].forEach(x => x.classList.remove("shake")), 500);
+    buzz(); setTimeout(() => say("wrong"), 250);
+  }
+}
+
+function drawLines() {
+  const svg = $("lines"), box = $("board").getBoundingClientRect();
+  svg.innerHTML = "";
+  matched.forEach(id => {
+    const a = document.querySelector(`.act[data-id="${id}"] .dot`).getBoundingClientRect();
+    const b = document.querySelector(`.res[data-id="${id}"] .dot`).getBoundingClientRect();
+    const x1 = a.left + a.width / 2 - box.left, y1 = a.top + a.height / 2 - box.top;
+    const x2 = b.left + b.width / 2 - box.left, y2 = b.top + b.height / 2 - box.top;
+    const ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    Object.entries({ x1, y1, x2, y2, stroke: "#27ae60", "stroke-width": 10, "stroke-linecap": "round" })
+      .forEach(([k, v]) => ln.setAttribute(k, v));
+    svg.appendChild(ln);
+  });
+}
+function updateStars() {
+  $("stars").textContent = "★".repeat(matched.size) + "☆".repeat(ITEMS.length - matched.size);
+}
+
+function finish() {
+  $("summary").innerHTML = ITEMS.map(it => `<div>${it.emo} ${it.act} → ${it.res}</div>`).join("");
+  $("finish").hidden = false;
+  say("done");
+  for (let i = 0; i < 40; i++) {
+    const s = document.createElement("div");
+    s.className = "confetti";
+    s.textContent = ["⭐", "🎈", "🫧", "✨", "🎉"][i % 5];
+    s.style.left = Math.random() * 100 + "vw";
+    s.style.animationDuration = 2.5 + Math.random() * 2.5 + "s";
+    s.style.animationDelay = Math.random() * 1.2 + "s";
+    document.body.appendChild(s);
+    setTimeout(() => s.remove(), 6500);
+  }
+}
+
+$("btnStart").addEventListener("click", () => { $("start").hidden = true; build(); say("intro"); });
+$("btnAgain").addEventListener("click", () => { $("finish").hidden = true; build(); say("intro"); });
+$("btnReset").addEventListener("click", () => { build(); say("intro"); });
+$("btnHear").addEventListener("click", () => say(lastKey));
+$("btnFull").addEventListener("click", () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+});
+window.addEventListener("resize", drawLines);
+if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => {};
+</script>
+</body>
+</html>

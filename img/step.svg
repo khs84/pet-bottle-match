@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 200">
+  <rect width="300" height="200" rx="18" fill="#f1f8ff"/>
+  <rect x="0" y="176" width="300" height="24" fill="#d7e6f3"/>
+  <!-- 찌그러진 페트병 (누워 있음) -->
+  <rect x="38" y="140" width="16" height="28" rx="3" fill="#4a90e2"/>
+  <path d="M54 146 H66 Q76 136 92 138 L112 132 L126 146 L144 130 L160 146 L176 132 L192 146 L210 134 L232 140 Q248 140 248 154 V164 Q248 176 236 176 H92 Q76 176 66 168 H54 Z"
+        fill="#e3f3ff" stroke="#5aa0d8" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M96 164 H232" stroke="#ffffff" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+  <!-- 운동화 -->
+  <g>
+    <path d="M100 126 Q96 96 118 84 L150 72 Q160 50 186 50 H214 Q226 50 228 64 L232 104 Q262 108 262 124 V128 Q262 134 254 134 H108 Q100 134 100 126 Z"
+          fill="#ffffff" stroke="#1f3a5f" stroke-width="4" stroke-linejoin="round"/>
+    <rect x="100" y="122" width="162" height="12" rx="5" fill="#f2994a" stroke="#1f3a5f" stroke-width="3"/>
+    <path d="M160 80 L176 92 M172 72 L188 84 M184 64 L200 76" stroke="#1f3a5f" stroke-width="3" stroke-linecap="round"/>
+    <rect x="186" y="34" width="44" height="22" rx="6" fill="#7fb3e0" stroke="#1f3a5f" stroke-width="3"/>
+  </g>
+  <!-- 누르는 표시 -->
+  <path d="M60 104 l12 10 M50 120 l14 6 M270 92 l-10 12" stroke="#eb5757" stroke-width="4" stroke-linecap="round"/>
+  <path d="M180 14 V30 M172 24 L180 32 L188 24" stroke="#eb5757" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
