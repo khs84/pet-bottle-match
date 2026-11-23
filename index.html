@@ -43,7 +43,7 @@
 
   .board { position: relative; flex: 1; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,.7fr) minmax(0,1.35fr); min-height: 0; }
   .col { display: flex; flex-direction: column; justify-content: space-around; gap: 2vh; z-index: 2; }
-  svg.lines { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+  svg.lines { position: absolute; top: 0; right: 0; bottom: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
 
   .card {
     position: relative; background: var(--card); border: 6px solid transparent; border-radius: 26px;
@@ -72,7 +72,7 @@
   .card.done .dot { background: var(--ok); }
 
   .overlay {
-    position: fixed; inset: 0; background: rgba(234,246,255,.96); z-index: 10;
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(234,246,255,.96); z-index: 10;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3vh; text-align: center; padding: 4vw;
   }
   .overlay[hidden] { display: none; }
@@ -253,7 +253,8 @@ function bubbleFx(card, count = 14) {
 
 /* ---------- 게임 ---------- */
 const $ = id => document.getElementById(id);
-let selLeft = null, selRight = null, matched = new Set();
+let selLeft = null, selRight = null, matched = new Set(), timers = [];
+const later = (fn, ms) => timers.push(setTimeout(fn, ms));
 
 function shuffle(a) {
   const b = a.slice();
@@ -262,13 +263,14 @@ function shuffle(a) {
 }
 
 function build() {
+  timers.forEach(clearTimeout); timers = [];
   matched.clear(); selLeft = selRight = null;
   $("left").innerHTML = ""; $("right").innerHTML = ""; $("lines").innerHTML = "";
   ITEMS.forEach(it => {
     const c = document.createElement("div");
     c.className = "card act"; c.dataset.id = it.id;
     c.innerHTML = `<span class="emo">${it.emo}</span><span class="txt">${it.act}</span><span class="dot"></span>`;
-    c.addEventListener("pointerup", () => tapLeft(c));
+    c.addEventListener("click", () => tapLeft(c));
     $("left").appendChild(c);
   });
   let order = shuffle(ITEMS);
@@ -277,7 +279,7 @@ function build() {
     const c = document.createElement("div");
     c.className = "card res"; c.dataset.id = it.id;
     c.innerHTML = `<span class="dot"></span><img src="${it.img}" alt="${it.res}"><span class="txt">${it.res}</span>`;
-    c.addEventListener("pointerup", () => tapRight(c));
+    c.addEventListener("click", () => tapRight(c));
     $("right").appendChild(c);
   });
   updateStars();
@@ -309,16 +311,16 @@ function check() {
     matched.add(L.dataset.id);
     drawLines(); updateStars(); chime();
     if (L.dataset.id === "water") {
-      setTimeout(() => { bubbles(2.2); bubbleFx(R, 18); }, 250);
-      setTimeout(() => say("ok_water"), 1500);
+      later(() => { bubbles(2.2); bubbleFx(R, 18); }, 250);
+      later(() => say("ok_water"), 1500);
     } else {
-      setTimeout(() => say("ok_" + L.dataset.id), 380);
+      later(() => say("ok_" + L.dataset.id), 380);
     }
-    if (matched.size === ITEMS.length) setTimeout(finish, L.dataset.id === "water" ? 5000 : 3600);
+    if (matched.size === ITEMS.length) later(finish, L.dataset.id === "water" ? 5000 : 3600);
   } else {
     [L, R].forEach(x => { x.classList.remove("shake"); void x.offsetWidth; x.classList.add("shake"); });
     setTimeout(() => [L, R].forEach(x => x.classList.remove("shake")), 500);
-    buzz(); setTimeout(() => say("wrong"), 250);
+    buzz(); later(() => say("wrong"), 250);
   }
 }
 
@@ -347,7 +349,7 @@ function finish() {
   for (let i = 0; i < 40; i++) {
     const s = document.createElement("div");
     s.className = "confetti";
-    s.textContent = ["⭐", "🎈", "🫧", "✨", "🎉"][i % 5];
+    s.textContent = ["⭐", "🎈", "💧", "✨", "🎉"][i % 5];
     s.style.left = Math.random() * 100 + "vw";
     s.style.animationDuration = 2.5 + Math.random() * 2.5 + "s";
     s.style.animationDelay = Math.random() * 1.2 + "s";
